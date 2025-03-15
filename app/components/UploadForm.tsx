@@ -1,4 +1,3 @@
-// components/UploadForm.tsx
 "use client";
 import { useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
@@ -9,8 +8,8 @@ interface UploadFormProps {
 
 const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const [inventoryCode, setInventoryCode] = useState("");
-  const [available, setAvailable] = useState<number>(0);
-  const [pricing, setPricing] = useState<number>(0);
+  const [available, setAvailable] = useState<number | "">(0);
+  const [pricing, setPricing] = useState<number | "">(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +81,7 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-black mb-1">
             Inventory Code*
           </label>
           <input
@@ -90,47 +89,47 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
             placeholder="Enter unique code"
             value={inventoryCode}
             onChange={(e) => setInventoryCode(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-black mb-1">
             Available Quantity
           </label>
           <input
             type="number"
-            value={available}
-            onChange={(e) => setAvailable(Number(e.target.value))}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={available === 0 ? "" : available}
+            onChange={(e) => setAvailable(e.target.value === "" ? "" : Number(e.target.value))}
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
             min="0"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">
+          <label className="block text-sm font-medium text-black mb-1">
             Price ($)
           </label>
           <input
             type="number"
-            value={pricing}
-            onChange={(e) => setPricing(Number(e.target.value))}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={pricing === 0 ? "" : pricing}
+            onChange={(e) => setPricing(e.target.value === "" ? "" : Number(e.target.value))}
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
             min="0"
             step="0.01"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-black mb-1">
             Video (Optional)
           </label>
           <input
             type="file"
             accept="video/*"
             onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
           />
         </div>
       </div>
