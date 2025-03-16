@@ -11,14 +11,14 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const [available, setAvailable] = useState<number | "">(0);
   const [pricing, setPricing] = useState<number | "">(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null); // New state for images
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
-    // Validate form
+
     if (!inventoryCode) return setError("Please enter an inventory code");
     if (pricing < 0) return setError("Price cannot be negative");
     if (available < 0) return setError("Available quantity cannot be negative");
@@ -27,11 +27,12 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
     
     try {
       let videoPath = null;
-      
+      let photoUrl = null;
+
       // Upload video if provided
       if (videoFile) {
         const filePath = `videos/${Date.now()}-${videoFile.name.replace(/\s+/g, '-')}`;
-        const { data, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("inventory-videos")
           .upload(filePath, videoFile);
 
@@ -39,7 +40,31 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
           throw new Error(`Video upload failed: ${uploadError.message}`);
         }
 
-        videoPath = filePath;
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from("inventory-videos")
+          .getPublicUrl(filePath);
+
+        videoPath = publicUrlData.publicUrl;
+      }
+
+      // Upload image if provided
+      if (photoFile) {
+        const filePath = `photos/${Date.now()}-${photoFile.name.replace(/\s+/g, '-')}`;
+        const { error: uploadError } = await supabase.storage
+          .from("inventory-photo") // Ensure this bucket exists
+          .upload(filePath, photoFile);
+
+        if (uploadError) {
+          throw new Error(`Image upload failed: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from("inventory-photo")
+          .getPublicUrl(filePath);
+
+        photoUrl = publicUrlData.publicUrl;
       }
 
       // Insert into inventory table
@@ -47,7 +72,8 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
         inventory_code: inventoryCode, 
         available: available,
         pricing: pricing,
-        video_path: videoPath
+        video_path: videoPath, 
+        photo_url: photoUrl, // Store image URL
       }]);
 
       if (insertError) {
@@ -59,8 +85,8 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
       setAvailable(0);
       setPricing(0);
       setVideoFile(null);
-      
-      // Notify parent of success
+      setPhotoFile(null);
+
       if (onSuccess) onSuccess();
       
     } catch (err) {
@@ -129,6 +155,18 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
             type="file"
             accept="video/*"
             onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-black mb-1">
+            Image (Optional)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
           />
         </div>

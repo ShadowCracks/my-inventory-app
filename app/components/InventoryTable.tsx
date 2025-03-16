@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
-import { Search, RefreshCw, Film, FileX, Plus, X } from "lucide-react";
+import { Search, RefreshCw, FileX, Plus, X, Play } from "lucide-react";
 import dynamic from 'next/dynamic';
 import UploadForm from "./UploadForm";
 
@@ -23,6 +23,9 @@ const InventoryTableComponent = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showUploadForm, setShowUploadForm] = useState<boolean>(false);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [totalAvailable, setTotalAvailable] = useState<number>(0);
+  const [totalPricing, setTotalPricing] = useState<number>(0);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -35,8 +38,15 @@ const InventoryTableComponent = () => {
         throw new Error(error.message);
       }
       
-      setInventory(data as InventoryItem[]);
-      setFilteredInventory(data as InventoryItem[]);
+      const items = data as InventoryItem[];
+      setInventory(items);
+      setFilteredInventory(items);
+      
+      // Calculate totals
+      const totalAvail = items.reduce((sum, item) => sum + item.available, 0);
+      const totalPrice = items.reduce((sum, item) => sum + item.pricing, 0);
+      setTotalAvailable(totalAvail);
+      setTotalPricing(totalPrice);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
       console.error("Error fetching inventory:", err);
@@ -55,8 +65,18 @@ const InventoryTableComponent = () => {
         item.inventory_code.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredInventory(filtered);
+      
+      // Recalculate totals based on filtered data
+      const totalAvail = filtered.reduce((sum, item) => sum + item.available, 0);
+      const totalPrice = filtered.reduce((sum, item) => sum + item.pricing, 0);
+      setTotalAvailable(totalAvail);
+      setTotalPricing(totalPrice);
     } else {
       setFilteredInventory(inventory);
+      const totalAvail = inventory.reduce((sum, item) => sum + item.available, 0);
+      const totalPrice = inventory.reduce((sum, item) => sum + item.pricing, 0);
+      setTotalAvailable(totalAvail);
+      setTotalPricing(totalPrice);
     }
   }, [searchTerm, inventory]);
 
@@ -66,7 +86,15 @@ const InventoryTableComponent = () => {
 
   const handleUploadSuccess = () => {
     setShowUploadForm(false);
-    fetchData(); // Refresh the data after successful upload
+    fetchData();
+  };
+
+  const handleVideoClick = (videoPath: string) => {
+    setSelectedVideo(videoPath);
+  };
+
+  const closeVideoPopup = () => {
+    setSelectedVideo(null);
   };
 
   return (
@@ -86,8 +114,6 @@ const InventoryTableComponent = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-black-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-400"
             />
-
-
           </div>
           
           <div className="flex gap-2">
@@ -110,7 +136,6 @@ const InventoryTableComponent = () => {
         </div>
       </div>
 
-      {/* Upload Form Modal */}
       {showUploadForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -124,6 +149,23 @@ const InventoryTableComponent = () => {
               </button>
             </div>
             <UploadForm onSuccess={handleUploadSuccess} />
+          </div>
+        </div>
+      )}
+
+      {selectedVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 relative max-w-3xl w-full">
+            <button
+              onClick={closeVideoPopup}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <video controls className="w-full h-auto">
+              <source src={selectedVideo} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       )}
@@ -161,52 +203,67 @@ const InventoryTableComponent = () => {
                 <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-600">Inventory Code</th>
                 <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-600">Available</th>
                 <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-600">Price</th>
-                <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-600">Video</th>
+                <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-200">Photo&Video</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredInventory.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{item.inventory_code}</td>
-                  <td className="px-4 py-3">{item.available}</td>
-                  <td className="px-4 py-3">${item.pricing.toFixed(2)}</td>
+                <tr key={item.id} className="hover:bg-gray-50 transition-colors even:bg-gray-50 odd:bg-white">
+                  <td className="px-4 py-3 font-bold text-gray-800">{item.inventory_code}</td>
+                  <td className="px-4 py-3 text-black">{item.available.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-black">${item.pricing.toFixed(2)}</td>
                   <td className="px-4 py-3">
-                    {item.video_path ? (
-                      <div className="relative group">
-                        <div className="flex items-center gap-2">
-                          <Film className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm text-blue-500 cursor-pointer">View Video</span>
+                    <div className="flex items-center gap-4">
+                      {/* Photo Display */}
+                      {item.photo_url ? (
+                        <img 
+                          src={item.photo_url} 
+                          alt="Item photo" 
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-md">
+                          <FileX className="h-4 w-4 text-gray-400" />
                         </div>
-                        
-                        <div className="absolute hidden group-hover:block z-10 mt-2 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
-                          <video controls className="h-40 w-64 bg-black">
-                            <source src={item.video_path} type="video/mp4" />
-                            Your browser does not support the video tag.
-                          </video>
+                      )}
+                      
+                      {/* Video Display */}
+                      {item.video_path ? (
+                        <button 
+                          onClick={() => handleVideoClick(item.video_path)}
+                          className="flex items-center gap-2 text-blue-500 hover:text-blue-600"
+                        >
+                          <Play className="h-4 w-4" />
+                          <span className="text-sm">Play</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <FileX className="h-4 w-4" />
+                          <span className="text-sm">No Video</span>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <FileX className="h-4 w-4" />
-                        <span className="text-sm">No Video</span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="bg-gray-50 font-medium">
+                <td className="px-4 py-3 text-gray-600" colSpan={1}>
+                  Showing {filteredInventory.length} of {inventory.length} records
+                </td>
+                <td className="px-4 py-3 text-black">Sum {totalAvailable.toFixed(1)}</td>
+                <td className="px-4 py-3 text-black">Sum ${totalPricing.toFixed(2)}</td>
+                <td className="px-4 py-3"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
-      
-      <div className="p-4 border-t border-gray-200 text-sm text-gray-500">
-        Showing {filteredInventory.length} of {inventory.length} inventory items
-      </div>
     </div>
   );
 };
 
-// Use dynamic import with ssr: false to avoid hydration errors
 const InventoryTable = dynamic(() => Promise.resolve(InventoryTableComponent), {
   ssr: false
 });
