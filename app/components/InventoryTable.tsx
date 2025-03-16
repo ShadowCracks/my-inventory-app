@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
-import { Search, RefreshCw, FileX, Plus, X, Play } from "lucide-react";
+import { Search, RefreshCw, FileX, Plus, X, Play, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import dynamic from 'next/dynamic';
 import UploadForm from "./UploadForm";
 
@@ -23,7 +23,8 @@ const InventoryTableComponent = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showUploadForm, setShowUploadForm] = useState<boolean>(false);
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<InventoryItem | null>(null);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState<number>(0); // 0 for photo, 1 for video
   const [totalAvailable, setTotalAvailable] = useState<number>(0);
   const [totalPricing, setTotalPricing] = useState<number>(0);
 
@@ -89,12 +90,42 @@ const InventoryTableComponent = () => {
     fetchData();
   };
 
-  const handleVideoClick = (videoPath: string) => {
-    setSelectedVideo(videoPath);
+  const handleMediaClick = (item: InventoryItem) => {
+    setSelectedMedia(item);
+    setCurrentMediaIndex(item.photo_url ? 0 : 1); // Start with photo if available, otherwise video
   };
 
-  const closeVideoPopup = () => {
-    setSelectedVideo(null);
+  const closeMediaPopup = () => {
+    setSelectedMedia(null);
+    setCurrentMediaIndex(0);
+  };
+
+  const handleNextMedia = () => {
+    if (selectedMedia) {
+      const mediaCount = [selectedMedia.photo_url, selectedMedia.video_path].filter(Boolean).length;
+      setCurrentMediaIndex((prev) => (prev + 1) % mediaCount);
+    }
+  };
+
+  const handlePrevMedia = () => {
+    if (selectedMedia) {
+      const mediaCount = [selectedMedia.photo_url, selectedMedia.video_path].filter(Boolean).length;
+      setCurrentMediaIndex((prev) => (prev - 1 + mediaCount) % mediaCount);
+    }
+  };
+
+  const handleDownload = () => {
+    if (selectedMedia) {
+      const currentMedia = currentMediaIndex === 0 ? selectedMedia.photo_url : selectedMedia.video_path;
+      if (currentMedia) {
+        const link = document.createElement('a');
+        link.href = currentMedia;
+        link.download = currentMedia.split('/').pop() || 'media';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
   };
 
   return (
@@ -153,19 +184,65 @@ const InventoryTableComponent = () => {
         </div>
       )}
 
-      {selectedVideo && (
+      {selectedMedia && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 relative max-w-3xl w-full">
+          <div className="bg-white rounded-lg p-4 relative max-w-md w-full">
             <button
-              onClick={closeVideoPopup}
+              onClick={closeMediaPopup}
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
             >
               <X className="h-5 w-5" />
             </button>
-            <video controls className="w-full h-auto">
-              <source src={selectedVideo} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+
+            <div className="relative">
+              {/* Media Display */}
+              {currentMediaIndex === 0 && selectedMedia.photo_url ? (
+                <img
+                  src={selectedMedia.photo_url}
+                  alt="Item photo"
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                />
+              ) : (
+                selectedMedia.video_path && (
+                  <video controls className="w-full h-auto max-h-[70vh]">
+                    <source src={selectedMedia.video_path} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                )
+              )}
+
+              {/* Navigation Arrows */}
+              {selectedMedia.photo_url && selectedMedia.video_path && (
+                <>
+                  <button
+                    onClick={handlePrevMedia}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button
+                    onClick={handleNextMedia}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Footer with Download Button */}
+            <div className="flex justify-between items-center mt-4">
+              <div className="text-sm text-gray-500">
+                {currentMediaIndex === 0 && selectedMedia.photo_url ? 'Photo' : 'Video'} • {selectedMedia.photo_url && selectedMedia.video_path ? `${currentMediaIndex + 1} of 2` : '1 of 1'}
+              </div>
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -216,11 +293,13 @@ const InventoryTableComponent = () => {
                     <div className="flex items-center gap-4">
                       {/* Photo Display */}
                       {item.photo_url ? (
-                        <img 
-                          src={item.photo_url} 
-                          alt="Item photo" 
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
+                        <button onClick={() => handleMediaClick(item)}>
+                          <img 
+                            src={item.photo_url} 
+                            alt="Item photo" 
+                            className="w-16 h-16 object-cover rounded-md"
+                          />
+                        </button>
                       ) : (
                         <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-md">
                           <FileX className="h-4 w-4 text-gray-400" />
@@ -230,7 +309,7 @@ const InventoryTableComponent = () => {
                       {/* Video Display */}
                       {item.video_path ? (
                         <button 
-                          onClick={() => handleVideoClick(item.video_path)}
+                          onClick={() => handleMediaClick(item)}
                           className="flex items-center gap-2 text-blue-500 hover:text-blue-600"
                         >
                           <Play className="h-4 w-4" />
