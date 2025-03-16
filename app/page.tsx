@@ -1,10 +1,10 @@
 // app/inventory/page.tsx
-import InventoryPag from "./components/InventoryPag";
+import InventoryTable from "./components/InventoryTable";
 
 export default function InventoryPage() {
   return (
-    <div className="container mx-auto p-4">
-      <InventoryPag/>
+    <div >
+      <InventoryTable/>
     </div>
   );
 }
