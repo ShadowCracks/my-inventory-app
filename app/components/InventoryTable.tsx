@@ -126,6 +126,20 @@ const InventoryTableComponent = () => {
     }
   };
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Close the modal only if the click is on the backdrop (not the modal content)
+    if (e.target === e.currentTarget) {
+      setShowUploadForm(false);
+    }
+  };
+
+  const handleMediaBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Close the media popup only if the click is on the backdrop
+    if (e.target === e.currentTarget) {
+      closeMediaPopup();
+    }
+  };
+
   return (
     <div className="space-y-6 p-6 bg-gray-300 min-h-screen text-gray-100">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -167,8 +181,14 @@ const InventoryTableComponent = () => {
         </div>
 
         {showUploadForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300">
-            <div className="bg-white rounded-xl p-8 w-full max-w-lg shadow-2xl transform transition-all duration-300 scale-100">
+          <div 
+            className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 transition-opacity duration-300"
+            onClick={handleBackdropClick}
+          >
+            <div 
+              className="bg-white rounded-xl p-8 w-full max-w-lg shadow-2xl transform transition-all duration-300 scale-100"
+              onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
+            >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">Add New Inventory Item</h3>
                 <button 
@@ -184,8 +204,14 @@ const InventoryTableComponent = () => {
         )}
 
         {selectedMedia && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300">
-            <div className="bg-white rounded-xl p-6 relative max-w-md w-full shadow-2xl">
+          <div 
+            className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 transition-opacity duration-300"
+            onClick={handleMediaBackdropClick}
+          >
+            <div 
+              className="bg-white rounded-xl p-6 relative max-w-md w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
+            >
               <button
                 onClick={closeMediaPopup}
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
