@@ -8,10 +8,10 @@ interface UploadFormProps {
 
 const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const [inventoryCode, setInventoryCode] = useState("");
-  const [available, setAvailable] = useState<number | "">(0);
-  const [pricing, setPricing] = useState<number | "">(0);
+  const [available, setAvailable] = useState<number | "">(0); // Still allows empty string for initial state
+  const [pricing, setPricing] = useState<number | "">(0); // Still allows empty string for initial state
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null); // New state for images
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,9 +19,13 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
     e.preventDefault();
     setError(null);
 
+    // Convert to number and check if valid
+    const availableNum = typeof available === "number" ? available : 0;
+    const pricingNum = typeof pricing === "number" ? pricing : 0;
+
     if (!inventoryCode) return setError("Please enter an inventory code");
-    if (pricing < 0) return setError("Price cannot be negative");
-    if (available < 0) return setError("Available quantity cannot be negative");
+    if (pricingNum < 0) return setError("Price cannot be negative");
+    if (availableNum < 0) return setError("Available quantity cannot be negative");
 
     setIsLoading(true);
     
@@ -52,7 +56,7 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
       if (photoFile) {
         const filePath = `photos/${Date.now()}-${photoFile.name.replace(/\s+/g, '-')}`;
         const { error: uploadError } = await supabase.storage
-          .from("inventory-photo") // Ensure this bucket exists
+          .from("inventory-photo")
           .upload(filePath, photoFile);
 
         if (uploadError) {
@@ -70,10 +74,10 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
       // Insert into inventory table
       const { error: insertError } = await supabase.from("inventory").insert([{ 
         inventory_code: inventoryCode, 
-        available: available,
-        pricing: pricing,
+        available: availableNum,
+        pricing: pricingNum,
         video_path: videoPath, 
-        photo_url: photoUrl, // Store image URL
+        photo_url: photoUrl,
       }]);
 
       if (insertError) {
