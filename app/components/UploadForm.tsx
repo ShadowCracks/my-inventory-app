@@ -8,8 +8,9 @@ interface UploadFormProps {
 
 const UploadForm = ({ onSuccess }: UploadFormProps) => {
   const [inventoryCode, setInventoryCode] = useState("");
-  const [available, setAvailable] = useState<number | "">(0); // Still allows empty string for initial state
-  const [pricing, setPricing] = useState<number | "">(0); // Still allows empty string for initial state
+  const [available, setAvailable] = useState<number | "">(0);
+  const [pricing, setPricing] = useState<number | "">(0);
+  const [strainName, setStrainName] = useState(""); // Added state for strain_name
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +20,6 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
     e.preventDefault();
     setError(null);
 
-    // Convert to number and check if valid
     const availableNum = typeof available === "number" ? available : 0;
     const pricingNum = typeof pricing === "number" ? pricing : 0;
 
@@ -33,7 +33,6 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
       let videoPath = null;
       let photoUrl = null;
 
-      // Upload video if provided
       if (videoFile) {
         const filePath = `videos/${Date.now()}-${videoFile.name.replace(/\s+/g, '-')}`;
         const { error: uploadError } = await supabase.storage
@@ -44,7 +43,6 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
           throw new Error(`Video upload failed: ${uploadError.message}`);
         }
 
-        // Get public URL
         const { data: publicUrlData } = supabase.storage
           .from("inventory-videos")
           .getPublicUrl(filePath);
@@ -52,7 +50,6 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
         videoPath = publicUrlData.publicUrl;
       }
 
-      // Upload image if provided
       if (photoFile) {
         const filePath = `photos/${Date.now()}-${photoFile.name.replace(/\s+/g, '-')}`;
         const { error: uploadError } = await supabase.storage
@@ -63,7 +60,6 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
           throw new Error(`Image upload failed: ${uploadError.message}`);
         }
 
-        // Get public URL
         const { data: publicUrlData } = supabase.storage
           .from("inventory-photo")
           .getPublicUrl(filePath);
@@ -71,11 +67,11 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
         photoUrl = publicUrlData.publicUrl;
       }
 
-      // Insert into inventory table
       const { error: insertError } = await supabase.from("inventory").insert([{ 
         inventory_code: inventoryCode, 
         available: availableNum,
         pricing: pricingNum,
+        strain_name: strainName || null, // Include strain_name in the insert
         video_path: videoPath, 
         photo_url: photoUrl,
       }]);
@@ -84,10 +80,10 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
         throw new Error(`Database insert failed: ${insertError.message}`);
       }
 
-      // Reset form
       setInventoryCode("");
       setAvailable(0);
       setPricing(0);
+      setStrainName(""); // Reset strain_name
       setVideoFile(null);
       setPhotoFile(null);
 
@@ -121,6 +117,19 @@ const UploadForm = ({ onSuccess }: UploadFormProps) => {
             onChange={(e) => setInventoryCode(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-black mb-1">
+            Strain Name
+          </label>
+          <input
+            type="text"
+            placeholder="Enter strain name"
+            value={strainName}
+            onChange={(e) => setStrainName(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
           />
         </div>
 

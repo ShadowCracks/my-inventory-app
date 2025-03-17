@@ -14,6 +14,7 @@ interface InventoryItem {
   photo_url?: string;
   video_path?: string;
   created_at: string;
+  strain_name?: string;
 }
 
 const InventoryTableComponent = () => {
@@ -25,6 +26,7 @@ const InventoryTableComponent = () => {
   const [showUploadForm, setShowUploadForm] = useState<boolean>(false);
   const [selectedMedia, setSelectedMedia] = useState<InventoryItem | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState<number>(0);
+  const [selectedStrain, setSelectedStrain] = useState<InventoryItem | null>(null);
   const [totalAvailable, setTotalAvailable] = useState<number>(0);
   const [totalPricing, setTotalPricing] = useState<number>(0);
 
@@ -127,17 +129,23 @@ const InventoryTableComponent = () => {
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Close the modal only if the click is on the backdrop (not the modal content)
     if (e.target === e.currentTarget) {
       setShowUploadForm(false);
     }
   };
 
   const handleMediaBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Close the media popup only if the click is on the backdrop
     if (e.target === e.currentTarget) {
       closeMediaPopup();
     }
+  };
+
+  const handleStrainClick = (item: InventoryItem) => {
+    setSelectedStrain(item);
+  };
+
+  const closeStrainPopup = () => {
+    setSelectedStrain(null);
   };
 
   return (
@@ -187,7 +195,7 @@ const InventoryTableComponent = () => {
           >
             <div 
               className="bg-white rounded-xl p-8 w-full max-w-lg shadow-2xl transform transition-all duration-300 scale-100"
-              onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">Add New Inventory Item</h3>
@@ -210,7 +218,7 @@ const InventoryTableComponent = () => {
           >
             <div 
               className="bg-white rounded-xl p-6 relative max-w-md w-full shadow-2xl"
-              onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={closeMediaPopup}
@@ -269,6 +277,67 @@ const InventoryTableComponent = () => {
           </div>
         )}
 
+        {selectedStrain && (
+          <div 
+            className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 transition-opacity duration-300"
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+              if (e.target === e.currentTarget) {
+                closeStrainPopup();
+              }
+            }}
+          >
+            <div 
+              className="bg-white rounded-xl p-6 relative max-w-md w-full shadow-2xl" // Changed to max-w-md to match video popup size
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeStrainPopup}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{selectedStrain.strain_name}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Available Lbs</label>
+                  <p className="text-gray-900">{selectedStrain.available.toFixed(1)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Pricing</label>
+                  <p className="text-gray-900">${selectedStrain.pricing.toFixed(2)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Video & Photo</label>
+                  <div className="flex items-center gap-2 mt-2">
+                    {selectedStrain.photo_url ? (
+                      <img
+                        src={selectedStrain.photo_url}
+                        alt="Item photo"
+                        className="w-20 h-20 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded">
+                        <FileX className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                    {selectedStrain.video_path ? (
+                      <video controls className="w-20 h-20 rounded">
+                        <source src={selectedStrain.video_path} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded">
+                        <FileX className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="p-8 flex justify-center items-center">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
@@ -290,7 +359,7 @@ const InventoryTableComponent = () => {
               onClick={() => setShowUploadForm(true)}
               className="mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 mx-auto shadow-sm"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-6 w-6" />
               <span>Add Your First Item</span>
             </button>
           </div>
@@ -299,6 +368,7 @@ const InventoryTableComponent = () => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100 text-left text-gray-700">
+                  <th className="px-6 py-4 border-b border-gray-200 font-semibold text-sm uppercase tracking-wider">Strain Name</th>
                   <th className="px-6 py-4 border-b border-gray-200 font-semibold text-sm uppercase tracking-wider">Inventory Code</th>
                   <th className="px-6 py-4 border-b border-gray-200 font-semibold text-sm uppercase tracking-wider">Available</th>
                   <th className="px-6 py-4 border-b border-gray-200 font-semibold text-sm uppercase tracking-wider">Price</th>
@@ -308,6 +378,9 @@ const InventoryTableComponent = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredInventory.map((item, index) => (
                   <tr key={item.id} className={`transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`}>
+                    <td className="px-6 py-4 text-gray-800 cursor-pointer" onClick={() => handleStrainClick(item)}>
+                      {item.strain_name || "N/A"}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-gray-900">{item.inventory_code}</td>
                     <td className="px-6 py-4 text-gray-800">{item.available.toFixed(1)}</td>
                     <td className="px-6 py-4 text-gray-800">${item.pricing.toFixed(2)}</td>
@@ -348,6 +421,7 @@ const InventoryTableComponent = () => {
               </tbody>
               <tfoot>
                 <tr className="bg-gray-100 text-gray-700 font-semibold">
+                  <td className="px-6 py-4 border-t border-gray-200 text-sm"></td>
                   <td className="px-6 py-4 border-t border-gray-200 text-sm">
                     Showing {filteredInventory.length} of {inventory.length} records
                   </td>
