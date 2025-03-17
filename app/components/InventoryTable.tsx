@@ -1,4 +1,3 @@
-// app/components/InventoryTable.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
@@ -287,7 +286,7 @@ const InventoryTableComponent = () => {
             }}
           >
             <div 
-              className="bg-white rounded-xl p-6 relative max-w-md w-full shadow-2xl" // Changed to max-w-md to match video popup size
+              className="bg-white rounded-xl p-6 relative max-w-lg w-full shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -309,25 +308,25 @@ const InventoryTableComponent = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Video & Photo</label>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-4 mt-2">
                     {selectedStrain.photo_url ? (
                       <img
                         src={selectedStrain.photo_url}
                         alt="Item photo"
-                        className="w-20 h-20 object-cover rounded"
+                        className="w-24 h-24 object-cover rounded"
                       />
                     ) : (
-                      <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded">
+                      <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded">
                         <FileX className="h-6 w-6 text-gray-400" />
                       </div>
                     )}
                     {selectedStrain.video_path ? (
-                      <video controls className="w-20 h-20 rounded">
+                      <video controls className="w-24 h-24 rounded">
                         <source src={selectedStrain.video_path} type="video/mp4" />
                         Your browser does not support the video tag.
                       </video>
                     ) : (
-                      <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded">
+                      <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded">
                         <FileX className="h-6 w-6 text-gray-400" />
                       </div>
                     )}
@@ -385,33 +384,33 @@ const InventoryTableComponent = () => {
                     <td className="px-6 py-4 text-gray-800">{item.available.toFixed(1)}</td>
                     <td className="px-6 py-4 text-gray-800">${item.pricing.toFixed(2)}</td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center">
                         {item.photo_url ? (
                           <button onClick={() => handleMediaClick(item)} className="group relative">
                             <img 
                               src={item.photo_url} 
                               alt="Item photo" 
-                              className="w-16 h-16 object-cover rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105"
+                              className="w-24 h-24 object-cover rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105 sm:w-32 sm:h-32"
                             />
+                            {item.video_path && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Play className="h-8 w-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            )}
+                          </button>
+                        ) : item.video_path ? (
+                          <button onClick={() => handleMediaClick(item)} className="group relative">
+                            <video 
+                              src={item.video_path}
+                              className="w-24 h-24 object-cover rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105 sm:w-32 sm:h-32"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Play className="h-8 w-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           </button>
                         ) : (
-                          <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-lg shadow-sm">
-                            <FileX className="h-5 w-5 text-gray-400" />
-                          </div>
-                        )}
-                        
-                        {item.video_path ? (
-                          <button 
-                            onClick={() => handleMediaClick(item)}
-                            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                          >
-                            <Play className="h-5 w-5" />
-                            <span className="text-sm font-medium">Play</span>
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-2 text-gray-400">
-                            <FileX className="h-5 w-5" />
-                            <span className="text-sm font-medium">No Video</span>
+                          <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded-lg shadow-sm sm:w-32 sm:h-32">
+                            <FileX className="h-6 w-6 text-gray-400" />
                           </div>
                         )}
                       </div>
